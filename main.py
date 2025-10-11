@@ -1,13 +1,81 @@
 import sys
+from enum import Enum
 #a = sys.stdin.read()
+
+def error(er_msg):
+  print(er_msg, file=sys.stderr) #ファイルを指定して書きこむ＝エラーとして出力
+  exit(1)
+
+class TokenKind(Enum):
+  TK_RESERVED = 1 #記号
+  TK_NUM = 2 #整数トークン
+  TK_EOF = 3 #入力の終わりを表すトークン
+
+class Token:
+
+  def __init__(self, kind, cur, string): #コンストラクタ
+    self.kind = kind # =TokenKind
+    self.string = string
+    if cur is not None:
+       cur.tsugi = self
+    # curがNoneなら次の値が分からないのでnextも放っておく
+
+  def expect_number(self):
+    #(self.tsugi, suuchi)
+    if self.kind != TokenKind.TK_NUM:
+      error("数ではありません")
+    return (self.tsugi, self.val)
+    #次のトークンも戻り値として返す
+  
+  def at_eof(self):
+    return self.kind == TokenKind.TK_EOF
+  
+  # 文字列が与えられた文字列と一致するかどうかの判定。フェーズ1なので
+  def consume(self, op):
+    # ここでself, tsugiを返すとmainがアセンブリの出力だけに集中できる
+    if self.kind != TokenKind.TK_RESERVED or self.string != op:
+      return (self, False)
+    else:
+      return (self.tsugi, True)
+  
+  # 
+  def expect(self, op):
+    if self.kind != TokenKind.TK_RESERVED or self.string != op:
+      error(f"{op}ではありません") #エラーを出す
+    
+    # Trueだとわかってるので不要、次のトークン
+    return (self.tsugi)
+  
+def tokenize(code):
+  #ダミーノード
+  head = Token(None, None, None)
+  cur = head 
+
+  i = 0
+  while i != len(code):
+    if code[i] == " ":
+      i += 1
+    elif code[i] == "+" or code[i] == "-":
+      cur = Token(TokenKind.TK_RESERVED, cur, code[i])
+      #code[i]は＋かーかを見る文だからi+1じゃない
+      i += 1
+    elif code[i].isdigit():
+      cur = Token(TokenKind.TK_NUM, cur, code[i])
+      cur.val, i =  strtol(code, i)
+    else:
+      error("トークナイズできません")
+  
+  #EOFは意味がないのでNoneを渡す
+  Token(TokenKind.TK_EOF, cur, None)
+  return head.tsugi
+
 if len(sys.argv) <= 1:
   print("引数の個数が足りません。")
   exit()
   
 a = sys.argv[1]
 num = []
-first = 0
-start = 0
+
 
 def strtol(lst, s):
   #print(lst, s)
@@ -18,52 +86,24 @@ def strtol(lst, s):
 
   return  "".join(num), s
 
-first, start = strtol(a, 0)
+token = tokenize(a)
 
 print(".intel_syntax noprefix")
 print(".globl main")
 print("main:")
-print(f"  mov rax, ", first)
+token , j = token.expect_number()
+print("  mov rax,", j)
 
-i = start
-while i != len(a):
-  if a[i] == "+":
-    num, i = strtol(a, i+1)
-    print("  add rax, ", num)
-  elif a[i] == "-":
-    num, i = strtol(a, i+1)
-    print("  sub rax, ", num)
-  else:
-    print("予期しない文字です", i)
-    exit()
+while (not token.at_eof()):
+  # +かどうか
+  token, bln = token.consume("+")
+  if bln:
+    token , j = token.expect_number()
+    print("  add rax, ", j)
+    continue #次のループへ
   
-  #break
+  token = token.expect("-")
+  token , j = token.expect_number()
+  print("  sub rax, ", j)
 
 print(" ret")
-
-'''
-for j in range(0,len(a)):
-  isBreak = False
-  for k in a[0:j]:
-    if k in str == False:
-      first = a[0:j]
-      start = j
-
-for i in range(len(a)):
-  if a[i] == "+":
-    print("  add rax, ", a[start:i-1])
-    start = i + 1
-    i += 1
-  elif a[i] == "-":
-    print(" sub rax, ", a[start:i-1])
-    start = i + 1
-    i += 1
-  else:
-    print("予期しない文字です", i)
-    exit()
-
-for j in range(0,len(a)):
-  if a[j] == "+" or a[j] == "-":
-    first = a[0:j-1]
-    start = j+1
-'''
