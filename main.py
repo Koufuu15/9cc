@@ -2,8 +2,11 @@ import sys
 from enum import Enum
 #a = sys.stdin.read()
 
-def error(er_msg):
-  print(er_msg, file=sys.stderr) #ファイルを指定して書きこむ＝エラーとして出力
+global user_input
+
+def error_at(er_msg, pos):
+  print(user_input, file=sys.stderr)
+  print(" " * pos + "^ " + er_msg, file=sys.stderr) #ファイルを指定して書きこむ＝エラーとして出力
   exit(1)
 
 class TokenKind(Enum):
@@ -13,9 +16,9 @@ class TokenKind(Enum):
 
 class Token:
 
-  def __init__(self, kind, cur, string): #コンストラクタ
+  def __init__(self, kind, cur, index): #コンストラクタ
     self.kind = kind # =TokenKind
-    self.string = string
+    self.index = index
     if cur is not None:
        cur.tsugi = self
     # curがNoneなら次の値が分からないのでnextも放っておく
@@ -23,7 +26,7 @@ class Token:
   def expect_number(self):
     #(self.tsugi, suuchi)
     if self.kind != TokenKind.TK_NUM:
-      error("数ではありません")
+      error_at("数ではありません", self.index)
     return (self.tsugi, self.val)
     #次のトークンも戻り値として返す
   
@@ -33,37 +36,38 @@ class Token:
   # 文字列が与えられた文字列と一致するかどうかの判定。フェーズ1なので
   def consume(self, op):
     # ここでself, tsugiを返すとmainがアセンブリの出力だけに集中できる
-    if self.kind != TokenKind.TK_RESERVED or self.string != op:
+    if self.kind != TokenKind.TK_RESERVED or user_input[self.index] != op:
       return (self, False)
     else:
       return (self.tsugi, True)
   
   # 
   def expect(self, op):
-    if self.kind != TokenKind.TK_RESERVED or self.string != op:
-      error(f"{op}ではありません") #エラーを出す
+    if self.kind != TokenKind.TK_RESERVED or user_input[self.index] != op:
+      error_at(f"{op}ではありません", self.index) #エラーを出す
     
     # Trueだとわかってるので不要、次のトークン
     return (self.tsugi)
   
-def tokenize(code):
+def tokenize():
+  global user_input
   #ダミーノード
   head = Token(None, None, None)
   cur = head 
 
   i = 0
-  while i != len(code):
-    if code[i] == " ":
+  while i != len(user_input):
+    if user_input[i] == " ":
       i += 1
-    elif code[i] == "+" or code[i] == "-":
-      cur = Token(TokenKind.TK_RESERVED, cur, code[i])
+    elif user_input[i] == "+" or user_input[i] == "-":
+      cur = Token(TokenKind.TK_RESERVED, cur, i)
       #code[i]は＋かーかを見る文だからi+1じゃない
       i += 1
-    elif code[i].isdigit():
-      cur = Token(TokenKind.TK_NUM, cur, code[i])
-      cur.val, i =  strtol(code, i)
+    elif user_input[i].isdigit():
+      cur = Token(TokenKind.TK_NUM, cur, i)
+      cur.val, i =  strtol(user_input, i)
     else:
-      error("トークナイズできません")
+      error_at("トークナイズできません", i)
   
   #EOFは意味がないのでNoneを渡す
   Token(TokenKind.TK_EOF, cur, None)
@@ -73,7 +77,8 @@ if len(sys.argv) <= 1:
   print("引数の個数が足りません。")
   exit()
   
-a = sys.argv[1]
+# 入力値をグローバル変数に
+user_input = sys.argv[1]
 num = []
 
 
@@ -86,7 +91,7 @@ def strtol(lst, s):
 
   return  "".join(num), s
 
-token = tokenize(a)
+token = tokenize()
 
 print(".intel_syntax noprefix")
 print(".globl main")
