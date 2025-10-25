@@ -14,11 +14,77 @@ class TokenKind(Enum):
   TK_NUM = 2 #整数トークン
   TK_EOF = 3 #入力の終わりを表すトークン
 
+class NodeKind(Enum):
+  ND_ADD = 1
+  ND_SUB = 2
+  ND_MUL = 3
+  ND_DIV = 4
+  ND_NUM = 5
+
+# コンストラクタを1つに統合　～self に情報を詰めているため、returnが要らない
+class Node:
+  def __init__(self, kind, lhs, rhs, val):
+    self.kind = kind
+    if kind == NodeKind.ND_NUM:
+      self.val = val
+    else:
+      self.lhs = lhs
+      self.rhs = rhs
+
+def expr(cur):
+  node, cur = mul(cur)
+
+  while True:
+    cur, bln = cur.consume('+')
+    if bln:
+      # mulは返り値が２つあるので引数にできない
+      rhs, cur = mul(cur)
+      # 現在見ているノードが演算子なら、必ずその右(rhs)にはノードがある
+      node = Node(NodeKind.ND_ADD, node, rhs, None)
+      continue
+    
+    # consumeは返り値が２つあるので直接引数にできない
+    cur, bln = cur.consume('-')
+    if bln:
+      rhs, cur = mul(cur)
+      node = Node(NodeKind.ND_SUB, node, rhs, None)
+      continue
+    return [node, cur]
+      
+def mul(cur):
+  node, cur = primary(cur)
+
+  while True:
+    cur, bln = cur.consume('*')
+    if bln:
+      rhs, cur = primary(cur)
+      node = Node(NodeKind.ND_MUL, node, rhs, None)
+      continue
+    
+    cur, bln = cur.consume('/')
+    if bln:
+      rhs, cur = primary(cur)
+      node = Node(NodeKind.ND_DIV, node, rhs, None)
+      continue
+    return [node, cur]
+      
+def primary(cur):
+  cur, bln = cur.consume('(')
+  if bln:
+    node, cur = expr(cur)
+    cur = cur.expect(')')
+    return [node, cur]
+  else:
+    cur, val = cur.expect_number()
+    # 数字のノードを作る。左辺と右辺はなし。
+    node = Node(NodeKind.ND_NUM, None, None, val)
+    return [node, cur]
+
 class Token:
 
   def __init__(self, kind, cur, index): #コンストラクタ
     self.kind = kind # =TokenKind
-    self.index = index
+    self.index = index  # self.index：クラス変数　index：引数
     if cur is not None:
        cur.tsugi = self
     # curがNoneなら次の値が分からないのでnextも放っておく
@@ -59,7 +125,7 @@ def tokenize():
   while i != len(user_input):
     if user_input[i] == " ":
       i += 1
-    elif user_input[i] == "+" or user_input[i] == "-":
+    elif user_input[i] in "+-*/()":
       cur = Token(TokenKind.TK_RESERVED, cur, i)
       #code[i]は＋かーかを見る文だからi+1じゃない
       i += 1
@@ -73,14 +139,31 @@ def tokenize():
   Token(TokenKind.TK_EOF, cur, None)
   return head.tsugi
 
-if len(sys.argv) <= 1:
-  print("引数の個数が足りません。")
-  exit()
+def gen(node):
+  if node.kind == NodeKind.ND_NUM:
+    print(" push", node.val)
+    return
   
-# 入力値をグローバル変数に
-user_input = sys.argv[1]
-num = []
+  # 右辺と左辺が計算済みなら自分も計算できる
+  gen(node.lhs)
+  gen(node.rhs)
 
+  # main関数のアセンブリなのでインデントが入る。
+  print(" pop rdi")
+  print(" pop rax")
+
+  match node.kind:
+    case NodeKind.ND_ADD:
+      print(" add rax, rdi")
+    case NodeKind.ND_SUB:
+      print(" sub rax, rdi")
+    case NodeKind.ND_MUL:
+      print(" imul rax, rdi")
+    case NodeKind.ND_DIV:
+      print(" cqo")
+      print(" idiv rax, rdi")
+  
+  print(" push rax")
 
 def strtol(lst, s):
   #print(lst, s)
@@ -91,24 +174,26 @@ def strtol(lst, s):
 
   return  "".join(num), s
 
-token = tokenize()
+# 入力値をグローバル変数に
+user_input = sys.argv[1]
+num = []
 
-print(".intel_syntax noprefix")
-print(".globl main")
-print("main:")
-token , j = token.expect_number()
-print("  mov rax,", j)
-
-while (not token.at_eof()):
-  # +かどうか
-  token, bln = token.consume("+")
-  if bln:
-    token , j = token.expect_number()
-    print("  add rax, ", j)
-    continue #次のループへ
+def main():
+  if len(sys.argv) <= 1:
+    print("引数の個数が足りません。")
+    exit()
   
-  token = token.expect("-")
-  token , j = token.expect_number()
-  print("  sub rax, ", j)
+  token = tokenize()
+  node, _ = expr(token)
 
-print(" ret")
+  print(".intel_syntax noprefix")
+  print(".globl main")
+  print("main:")
+
+  gen(node)
+
+  print(" pop rax")
+  print(" ret")
+
+if __name__ == "__main__":
+  main()
