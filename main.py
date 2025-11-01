@@ -52,18 +52,18 @@ def expr(cur):
     return [node, cur]
       
 def mul(cur):
-  node, cur = primary(cur)
+  node, cur = unary(cur)
 
   while True:
     cur, bln = cur.consume('*')
     if bln:
-      rhs, cur = primary(cur)
+      rhs, cur = unary(cur)
       node = Node(NodeKind.ND_MUL, node, rhs, None)
       continue
     
     cur, bln = cur.consume('/')
     if bln:
-      rhs, cur = primary(cur)
+      rhs, cur = unary(cur)
       node = Node(NodeKind.ND_DIV, node, rhs, None)
       continue
     return [node, cur]
@@ -79,6 +79,23 @@ def primary(cur):
     # 数字のノードを作る。左辺と右辺はなし。
     node = Node(NodeKind.ND_NUM, None, None, val)
     return [node, cur]
+
+def unary(cur):
+  cur, bln = cur.consume('+')
+  if bln:
+    node, cur = primary(cur)
+    return [node, cur]
+  
+  # 次に見るべきトークン cur 上書きすればずっと見とけばいい
+  cur, bln = cur.consume('-')
+  if bln:
+    node, cur = primary(cur)
+    zero = Node(NodeKind.ND_NUM, None, None, 0)
+    node = Node(NodeKind.ND_SUB, zero, node, cur)
+    return [node, cur]
+  
+  #  return [node, cur] unaryをスキップ
+  return primary(cur)
 
 class Token:
 
@@ -144,7 +161,7 @@ def gen(node):
     print(" push", node.val)
     return
   
-  # 右辺と左辺が計算済みなら自分も計算できる
+  # 右辺と左辺が計算済みなら計算できる
   gen(node.lhs)
   gen(node.rhs)
 
