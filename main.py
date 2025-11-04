@@ -19,7 +19,11 @@ class NodeKind(Enum):
   ND_SUB = 2
   ND_MUL = 3
   ND_DIV = 4
-  ND_NUM = 5
+  ND_EQ = 6
+  ND_NE = 7
+  ND_LT = 8
+  ND_LE = 9
+  ND_NUM = 10
 
 # コンストラクタを1つに統合　～self に情報を詰めているため、returnが要らない
 class Node:
@@ -32,13 +36,13 @@ class Node:
       self.rhs = rhs
 
 def expr(cur):
-  node, cur = mul(cur)
+  node, cur = equality(cur)
 
   while True:
     cur, bln = cur.consume('+')
     if bln:
       # mulは返り値が２つあるので引数にできない
-      rhs, cur = mul(cur)
+      rhs, cur = equality(cur)
       # 現在見ているノードが演算子なら、必ずその右(rhs)にはノードがある
       node = Node(NodeKind.ND_ADD, node, rhs, None)
       continue
@@ -46,7 +50,7 @@ def expr(cur):
     # consumeは返り値が２つあるので直接引数にできない
     cur, bln = cur.consume('-')
     if bln:
-      rhs, cur = mul(cur)
+      rhs, cur = equality(cur)
       node = Node(NodeKind.ND_SUB, node, rhs, None)
       continue
     return [node, cur]
@@ -97,14 +101,80 @@ def unary(cur):
   #  return [node, cur] unaryをスキップ
   return primary(cur)
 
+def equality(cur):
+  node, cur = relational(cur)
+  
+  while True:
+    cur, bln = cur.consume("==")
+    if bln:
+      rhs, cur = relational(cur)
+      node = Node(NodeKind.ND_EQ, node, rhs, None)
+      continue
+    
+    cur, bln = cur.consume("!=")
+    if bln:
+      rhs, cur = relational(cur)
+      node = Node(NodeKind.ND_NE, node, rhs, None)
+      continue
+
+    return [node, cur]
+
+def relational(cur):
+  node, cur = add(cur)
+  while True:
+    cur, bln = cur.consume("<")
+    if bln:
+      rhs, cur = add(cur)
+      node = Node(NodeKind.ND_LT, node, rhs, None)
+      continue
+    
+    cur, bln = cur.consume("<=")
+    if bln:
+      rhs, cur = add(cur)
+      node = Node(NodeKind.ND_LE, node, rhs, None)
+      continue
+
+    cur, bln = cur.consume(">")
+    if bln:
+      lhs, cur = add(cur)
+      node = Node(NodeKind.ND_LT, lhs, node, None)
+      continue
+    
+    cur, bln = cur.consume(">=")
+    if bln:
+      lhs, cur = add(cur)
+      node = Node(NodeKind.ND_LE, lhs, node, None)
+      continue
+  
+    return [node, cur]
+
+def add(cur):
+  node, cur = mul(cur)
+  while True:
+    cur, bln = cur.consume("+")
+    if bln:
+      rhs, cur = mul(cur)
+      node = Node(NodeKind.ND_ADD, node, rhs, None)
+      continue
+    
+    cur, bln = cur.consume("-")
+    if bln:
+      rhs, cur = mul(cur)
+      node = Node(NodeKind.ND_SUB, node, rhs, None)
+      continue
+    
+    return [node, cur]
+
 class Token:
 
-  def __init__(self, kind, cur, index): #コンストラクタ
+  def __init__(self, kind, cur, index, length=1): #コンストラクタ
     self.kind = kind # =TokenKind
     self.index = index  # self.index：クラス変数　index：引数
     if cur is not None:
        cur.tsugi = self
     # curがNoneなら次の値が分からないのでnextも放っておく
+    
+    self.length = length
 
   def expect_number(self):
     #(self.tsugi, suuchi)
@@ -119,14 +189,14 @@ class Token:
   # 文字列が与えられた文字列と一致するかどうかの判定。フェーズ1なので
   def consume(self, op):
     # ここでself, tsugiを返すとmainがアセンブリの出力だけに集中できる
-    if self.kind != TokenKind.TK_RESERVED or user_input[self.index] != op:
+    if self.kind != TokenKind.TK_RESERVED or user_input[self.index : self.index+self.length] != op:
       return (self, False)
     else:
       return (self.tsugi, True)
   
   # 
   def expect(self, op):
-    if self.kind != TokenKind.TK_RESERVED or user_input[self.index] != op:
+    if self.kind != TokenKind.TK_RESERVED or user_input[self.index : self.index+self.length] != op:
       error_at(f"{op}ではありません", self.index) #エラーを出す
     
     # Trueだとわかってるので不要、次のトークン
@@ -142,6 +212,21 @@ def tokenize():
   while i != len(user_input):
     if user_input[i] == " ":
       i += 1
+    # 比較の演算子が使われている場合
+    elif user_input[i] in "!=<>":
+      # 二文字分の場合がある
+      match user_input[i : i + 2]:
+        case "==" | "!=" | "<=" | ">=":
+          cur = Token(TokenKind.TK_RESERVED, cur, i, 2)
+          i += 2
+        case _:
+          # 一文字
+          if user_input[i] == ">" or user_input[i] == "<":
+            cur = Token(TokenKind.TK_RESERVED, cur, i)
+            i += 1
+          else:
+            # 現時点で'!', '='に対応する文法が存在しないため棄却しておく
+            error_at("不明なトークンです", i)
     elif user_input[i] in "+-*/()":
       cur = Token(TokenKind.TK_RESERVED, cur, i)
       #code[i]は＋かーかを見る文だからi+1じゃない
@@ -155,6 +240,23 @@ def tokenize():
   #EOFは意味がないのでNoneを渡す
   Token(TokenKind.TK_EOF, cur, None)
   return head.tsugi
+
+"""
+elif user_input[index] in "!=<>":
+            # 二文字分の場合がある
+            match user_input[index : index + 2]:
+                case "==" | "!=" | "<=" | ">=":
+                    cur = Token(TokenKind.TK_RESERVED, cur, index, 2)
+                    index += 2
+                case _:
+                    # 一文字
+                    if user_input[index] == ">" or user_input[index] == "<":
+                        cur = Token(TokenKind.TK_RESERVED, cur, index)
+                        index += 1
+                    else:
+                        # 現時点で'!', '='に対応する文法が存在しないため棄却しておく
+                        error_at("不明なトークンです", index)
+"""
 
 def gen(node):
   if node.kind == NodeKind.ND_NUM:
@@ -179,6 +281,22 @@ def gen(node):
     case NodeKind.ND_DIV:
       print(" cqo")
       print(" idiv rax, rdi")
+    case NodeKind.ND_EQ:
+      print(" cmp rax, rdi")
+      print(" sete al")
+      print(" movzb rax, al")
+    case NodeKind.ND_NE:
+      print(" cmp rax, rdi")
+      print(" setne al")
+      print(" movzb rax, al")
+    case NodeKind.ND_LT:
+      print(" cmp rax, rdi")
+      print(" setl al")
+      print(" movzb rax, al")
+    case NodeKind.ND_LE:
+      print(" cmp rax, rdi")
+      print(" setle al")
+      print(" movzb rax, al")
   
   print(" push rax")
 
