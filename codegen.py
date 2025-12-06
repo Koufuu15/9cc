@@ -1,9 +1,35 @@
 import parser
+import utils
+
+def gen_lval(node):
+  assert node.kind == parser.NodeKind.ND_LVAR, "代入の左辺値が変数ではありません"
+
+  print(" mov rax, rbp")
+  print(" sub rax,", node.offset)
+  print(" push rax") 
 
 def gen(node):
-  if node.kind == parser.NodeKind.ND_NUM:
-    print(" push", node.val)
-    return
+  # 上のmatchは1つの数字を受け取って１つの数字を返す、それより下は２つオペランドがあるときの処理
+  # 引数が１つ：下の処理は行わないため、returnで関数を抜けだす
+  match node.kind:
+    case parser.NodeKind.ND_NUM:
+      print(" push", node.val)
+      return
+    case parser.NodeKind.ND_LVAR:
+      gen_lval(node)
+      print(" pop rax")
+      print(" mov rax, [rax]")
+      print(" push rax")
+      return
+    case parser.NodeKind.ND_ASSIGN:
+      gen_lval(node.lhs)
+      gen(node.rhs)
+      print(" pop rdi")
+      print(" pop rax")
+      print(" mov [rax], rdi")
+      print(" push rdi")
+      return
+
   
   # 右辺と左辺が計算済みなら計算できる
   gen(node.lhs)

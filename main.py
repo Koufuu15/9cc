@@ -11,15 +11,24 @@ def main():
     exit()
   
   token = tokenizer.tokenize()
-  node, _ = parser.expr(token)
+  code = parser.program(token)
 
   print(".intel_syntax noprefix")
   print(".globl main")
   print("main:")
 
-  codegen.gen(node)
+  print(" push rbp")
+  print(" mov rbp, rsp")
+  print(" sub rsp, 208")
 
-  print(" pop rax")
+  for i in code:
+    codegen.gen(i)
+    # 何行もの命令の計算結果を一回ごとに取り除いておく
+    print(" pop rax")
+
+  # 変数実装には不可欠の2行
+  print(" mov rsp, rbp")
+  print(" pop rbp")
   print(" ret")
 
 if __name__ == "__main__":
