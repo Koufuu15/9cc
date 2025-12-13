@@ -19,7 +19,7 @@ def main():
 
   print(" push rbp")
   print(" mov rbp, rsp")
-  print(" sub rsp, 208")
+  print(" sub rsp, ", len(parser.lvar) * 8)
 
   for i in code:
     codegen.gen(i)

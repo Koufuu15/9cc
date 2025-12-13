@@ -87,8 +87,9 @@ def tokenize():
       cur = Token(TokenKind.TK_NUM, cur, i)
       cur.val, i =  utils.strtol(user_input, i)
     elif user_input[i] in string.ascii_lowercase:
-      cur = Token(TokenKind.TK_IDENT, cur, i)
-      i += 1
+      val = utils.keyword(i)
+      i += len(val)
+      cur = Token(TokenKind.TK_IDENT, cur, len(val))
     else:
       utils.error_at("トークナイズできません", i)
   

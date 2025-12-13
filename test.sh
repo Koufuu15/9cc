@@ -30,5 +30,6 @@ assert 0 "5<=5 * 3>4;"
 assert 0 "4>=6 + -1;"
 assert 0 "3 != 3;"
 assert 2 "a=1; b=1; a+b;" 
+assert 12 "five=5; seven=7; five+seven;"
 
 echo OK

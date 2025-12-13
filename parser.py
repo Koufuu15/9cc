@@ -1,6 +1,8 @@
 from enum import Enum
 import parser
 
+lvar = {}
+
 class NodeKind(Enum):
   ND_ADD = 1
   ND_SUB = 2
@@ -167,7 +169,9 @@ def primary(cur):
   
   cur, bln, varname = cur.consume_ident()
   if bln:
-    node = parser.Node(parser.NodeKind.ND_LVAR, varname, None, (ord(varname) - ord('a') + 1)*8)
+    if varname not in lvar:
+      lvar[varname] = (len(lvar) + 1) * 8
+    node = parser.Node(parser.NodeKind.ND_LVAR, varname, None, lvar[varname])
     return [node, cur]
 
   cur, val = cur.expect_number()
