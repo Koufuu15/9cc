@@ -29,6 +29,14 @@ def gen(node):
       print(" mov [rax], rdi")
       print(" push rdi")
       return
+    case parser.NodeKind.ND_RETURN:
+      gen(node.lhs)
+      print(" pop rax")
+      print(" mov rsp, rbp")
+      print(" pop rbp")
+      print(" ret")
+      return
+
 
   
   # 右辺と左辺が計算済みなら計算できる

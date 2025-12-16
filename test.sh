@@ -31,5 +31,7 @@ assert 0 "4>=6 + -1;"
 assert 0 "3 != 3;"
 assert 2 "a=1; b=1; a+b;" 
 assert 12 "five=5; seven=7; five+seven;"
+assert 12 "return 12;"
+assert 7 "a=3; return a+4; return 4;"
 
 echo OK

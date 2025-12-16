@@ -1,5 +1,6 @@
 from enum import Enum
 import parser
+import tokenizer
 
 lvar = {}
 
@@ -15,6 +16,7 @@ class NodeKind(Enum):
   ND_LT = 9
   ND_LE = 10
   ND_NUM = 11
+  ND_RETURN = 12
 
 # コンストラクタを1つに統合　～self に情報を詰めているため、returnが要らない
 class Node:
@@ -35,8 +37,14 @@ def program(cur):
     code.append(node)
   return code
 
-def stmt(cur):
-  node, cur = expr(cur)
+def stmt(cur):  
+  cur, bln = cur.consume_tokenKind(tokenizer.TokenKind.TK_RETURN)
+  if bln:
+    node, cur = expr(cur)
+    node = parser.Node(parser.NodeKind.ND_RETURN, node, None, None)
+  else:
+    node, cur = expr(cur)
+
   
   cur = cur.expect(";")
   return [node, cur]

@@ -9,6 +9,7 @@ class TokenKind(Enum):
   TK_IDENT = 4 #文字列トークン
   TK_NUM = 2 #整数トークン
   TK_EOF = 3 #入力の終わりを表すトークン
+  TK_RETURN = 5 #return文のトークン
 
 class Token:
 
@@ -54,6 +55,12 @@ class Token:
     # Trueだとわかってるので不要、次のトークン
     return (self.tsugi)
   
+  def consume_tokenKind(self, tokenKind):
+    if self.kind != tokenKind:
+      return (self, False)
+    else:
+      return (self.tsugi, True)
+  
 def tokenize():
   global user_input
   #ダミーノード
@@ -86,10 +93,13 @@ def tokenize():
     elif user_input[i].isdigit():
       cur = Token(TokenKind.TK_NUM, cur, i)
       cur.val, i =  utils.strtol(user_input, i)
-    elif user_input[i] in string.ascii_lowercase:
+    elif user_input[i] in string.ascii_lowercase + string.ascii_uppercase + "_":
       val = utils.keyword(i)
+      if val == "return":
+        cur = Token(TokenKind.TK_RETURN, cur, len(val))
+      else:
+        cur = Token(TokenKind.TK_IDENT, cur, len(val))
       i += len(val)
-      cur = Token(TokenKind.TK_IDENT, cur, len(val))
     else:
       utils.error_at("トークナイズできません", i)
   

@@ -11,6 +11,12 @@ def main():
     exit()
   
   token = tokenizer.tokenize()
+  '''
+  cur = token
+  while not cur.at_eof():
+    print(cur.kind)
+    cur = cur.tsugi
+  '''
   code = parser.program(token)
 
   print(".intel_syntax noprefix")
