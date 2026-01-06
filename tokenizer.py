@@ -10,6 +10,7 @@ class TokenKind(Enum):
   TK_NUM = 2 #整数トークン
   TK_EOF = 3 #入力の終わりを表すトークン
   TK_RETURN = 5 #return文のトークン
+  TK_IF = 6 #if文のトークン
 
 class Token:
 
@@ -97,6 +98,8 @@ def tokenize():
       val = utils.keyword(i)
       if val == "return":
         cur = Token(TokenKind.TK_RETURN, cur, len(val))
+      elif val == "if":
+        cur = Token(TokenKind.TK_IF, cur, len(val))
       else:
         cur = Token(TokenKind.TK_IDENT, cur, len(val))
       i += len(val)

@@ -1,6 +1,8 @@
 import parser
 import utils
 
+label_count = 0
+
 def gen_lval(node):
   assert node.kind == parser.NodeKind.ND_LVAR, "代入の左辺値が変数ではありません"
 
@@ -9,8 +11,10 @@ def gen_lval(node):
   print(" push rax") 
 
 def gen(node):
+  global label_count #複数回globalを書くとエラーになるのでここで書く
   # 上のmatchは1つの数字を受け取って１つの数字を返す、それより下は２つオペランドがあるときの処理
   # 引数が１つ：下の処理は行わないため、returnで関数を抜けだす
+  #print(node)
   match node.kind:
     case parser.NodeKind.ND_NUM:
       print(" push", node.val)
@@ -36,7 +40,17 @@ def gen(node):
       print(" pop rbp")
       print(" ret")
       return
-
+    case parser.NodeKind.ND_IF:
+      gen(node.cand)
+      print(" pop rax")
+      print(" cmp rax, 0")
+      label_now = label_count
+      label_count += 1
+      print(f" je .Lend{label_now}")
+      gen(node.if_block)
+      print(f".Lend{label_now}:")
+      print(" push rax")
+      return
 
   
   # 右辺と左辺が計算済みなら計算できる
