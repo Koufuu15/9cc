@@ -35,5 +35,6 @@ assert 12 "return 12;"
 assert 7 "a=3; return a+4; return 4;"
 assert 5 "if (2==3) return 0; return 5;"
 assert 0 "if (2==2) return 0; return 5;"
+assert 2 "if (1==3) return 1; else return 2;"
 
 echo OK

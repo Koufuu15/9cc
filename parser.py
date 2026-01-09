@@ -59,7 +59,14 @@ def stmt(cur):
     cur = cur.expect(")")
     if_block, cur = stmt(cur)
     #print(if_block)
-    node = parser.Node(parser.NodeKind.ND_IF, [cand, if_block, None], None)
+    
+    cur, bln = cur.consume_tokenKind(tokenizer.TokenKind.TK_ELSE)
+    if bln:
+      else_block, cur = stmt(cur)
+    else:
+      else_block = None
+      
+    node = parser.Node(parser.NodeKind.ND_IF, [cand, if_block, else_block], None)
     return [node, cur]
   
   node, cur = expr(cur)

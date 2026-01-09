@@ -46,9 +46,20 @@ def gen(node):
       print(" cmp rax, 0")
       label_now = label_count
       label_count += 1
-      print(f" je .Lend{label_now}")
-      gen(node.if_block)
-      print(f".Lend{label_now}:")
+      
+      if node.else_block is not None:
+        print(f" je .Lelse{label_now}")
+        gen(node.if_block)
+        label_count += 1
+        print(f" jmp .Lend{label_now}")
+        print(f".Lelse{label_now}:")
+        gen(node.else_block)
+        print(f".Lend{label_now}:")
+      else:
+        print(f" je .Lend{label_now}")
+        gen(node.if_block)
+        print(f".Lend{label_now}:")
+
       print(" push rax")
       return
 

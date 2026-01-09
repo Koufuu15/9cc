@@ -11,6 +11,7 @@ class TokenKind(Enum):
   TK_EOF = 3 #入力の終わりを表すトークン
   TK_RETURN = 5 #return文のトークン
   TK_IF = 6 #if文のトークン
+  TK_ELSE = 7
 
 class Token:
 
@@ -100,6 +101,8 @@ def tokenize():
         cur = Token(TokenKind.TK_RETURN, cur, len(val))
       elif val == "if":
         cur = Token(TokenKind.TK_IF, cur, len(val))
+      elif val == "else":
+        cur = Token(TokenKind.TK_ELSE, cur, len(val))
       else:
         cur = Token(TokenKind.TK_IDENT, cur, len(val))
       i += len(val)
