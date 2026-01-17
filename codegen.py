@@ -62,6 +62,20 @@ def gen(node):
 
       print(" push rax")
       return
+    case parser.NodeKind.ND_WHILE:
+      label_now = label_count
+      print(f".Lbegin{label_now}:")
+      gen(node.cand)
+      print(" pop rax")
+      print(" cmp rax, 0")
+      print(f" je .Lend{label_now}")
+      gen(node.while_block)
+      print(f" jmp .Lbegin{label_now}")
+      print(f".Lend{label_now}:")
+      
+      #1つのブロックで１つの値を返さないと壊れるため、raxにpush(=出力)しておく
+      print(" push rax")
+      return
 
   
   # 右辺と左辺が計算済みなら計算できる

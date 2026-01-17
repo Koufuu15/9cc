@@ -12,6 +12,7 @@ class TokenKind(Enum):
   TK_RETURN = 5 #return文のトークン
   TK_IF = 6 #if文のトークン
   TK_ELSE = 7
+  TK_WHILE = 8
 
 class Token:
 
@@ -103,6 +104,8 @@ def tokenize():
         cur = Token(TokenKind.TK_IF, cur, len(val))
       elif val == "else":
         cur = Token(TokenKind.TK_ELSE, cur, len(val))
+      elif val == "while":
+        cur = Token(TokenKind.TK_WHILE, cur, len(val))
       else:
         cur = Token(TokenKind.TK_IDENT, cur, len(val))
       i += len(val)
