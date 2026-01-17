@@ -76,7 +76,20 @@ def gen(node):
       #1つのブロックで１つの値を返さないと壊れるため、raxにpush(=出力)しておく
       print(" push rax")
       return
-
+    case parser.NodeKind.ND_FOR:
+      gen(node.expr1)
+      label_now = label_count
+      print(f".Lbegin{label_now}:")
+      gen(node.expr2)
+      print(" pop rax")
+      print(" cmp rax, 0")
+      print(f" je .Lend{label_now}")
+      gen(node.for_block)
+      gen(node.expr3)
+      print(f" jmp .Lbegin{label_now}")
+      print(f".Lend{label_now}:")
+      print(" push rax")
+      return
   
   # 右辺と左辺が計算済みなら計算できる
   gen(node.lhs)

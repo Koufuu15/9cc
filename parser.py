@@ -19,6 +19,7 @@ class NodeKind(Enum):
   ND_RETURN = 12
   ND_IF = 13
   ND_WHILE = 14
+  ND_FOR = 15
 
 # コンストラクタを1つに統合　～self に情報を詰めているため、returnが要らない
 class Node:
@@ -35,6 +36,8 @@ class Node:
       self.cand, self.if_block, self.else_block = nodes 
     elif kind == NodeKind.ND_WHILE:
       self.cand, self.while_block = nodes
+    elif kind == NodeKind.ND_FOR:
+      self.expr1, self.expr2, self.expr3, self.for_block = nodes
     else:
       self.lhs, self.rhs = nodes
 
@@ -72,6 +75,7 @@ def stmt(cur):
     node = parser.Node(parser.NodeKind.ND_IF, [cand, if_block, else_block], None)
     return [node, cur]
   
+  #while
   cur, bln = cur.consume_tokenKind(tokenizer.TokenKind.TK_WHILE)
   if bln:
     cur = cur.expect("(")
@@ -80,6 +84,20 @@ def stmt(cur):
     while_block, cur = stmt(cur)
     node = parser.Node(parser.NodeKind.ND_WHILE, [cand, while_block], None)
     return [node, cur]  #ないと処理を続けちゃう
+  
+  #for
+  cur, bln = cur.consume_tokenKind(tokenizer.TokenKind.TK_FOR)
+  if bln:
+    cur = cur.expect("(")
+    expr1, cur = expr(cur)
+    cur = cur.expect(";")
+    expr2, cur = expr(cur)
+    cur = cur.expect(";")
+    expr3, cur = expr(cur)
+    cur = cur.expect(")")
+    for_block, cur = stmt(cur)
+    node = parser.Node(parser.NodeKind.ND_FOR, [expr1, expr2, expr3, for_block], None)
+    return [node, cur]
   
   node, cur = expr(cur)
   cur = cur.expect(";")

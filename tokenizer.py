@@ -13,6 +13,7 @@ class TokenKind(Enum):
   TK_IF = 6 #if文のトークン
   TK_ELSE = 7
   TK_WHILE = 8
+  TK_FOR = 9
 
 class Token:
 
@@ -99,15 +100,17 @@ def tokenize():
     elif user_input[i] in string.ascii_lowercase + string.ascii_uppercase + "_":
       val = utils.keyword(i)
       if val == "return":
-        cur = Token(TokenKind.TK_RETURN, cur, len(val))
+        cur = Token(TokenKind.TK_RETURN, cur, i, len(val))
       elif val == "if":
-        cur = Token(TokenKind.TK_IF, cur, len(val))
+        cur = Token(TokenKind.TK_IF, cur, i, len(val))
       elif val == "else":
-        cur = Token(TokenKind.TK_ELSE, cur, len(val))
+        cur = Token(TokenKind.TK_ELSE, cur, i, len(val))
       elif val == "while":
-        cur = Token(TokenKind.TK_WHILE, cur, len(val))
+        cur = Token(TokenKind.TK_WHILE, cur, i, len(val))
+      elif val == "for":
+        cur = Token(TokenKind.TK_FOR, cur, i, len(val))
       else:
-        cur = Token(TokenKind.TK_IDENT, cur, len(val))
+        cur = Token(TokenKind.TK_IDENT, cur, i, len(val))
       i += len(val)
     else:
       utils.error_at("トークナイズできません", i)
