@@ -39,5 +39,7 @@ assert 0 "if (2==2) return 0; return 5;"
 assert 2 "if (1==3) return 1; else return 2;"
 assert 8 "a=1; while(a < 5) a=a*2; return a;"
 assert 3 "a=0; for(i=0; i<3; i=i+1) a = a + 1; return a;"
+assert 8 "if(1==1){return 8;}"
+assert 15 "a=0; b=0; while(a<5){a = a + 1; b = a + b;} return b;"
 
 echo OK

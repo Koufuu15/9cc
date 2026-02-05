@@ -20,6 +20,7 @@ class NodeKind(Enum):
   ND_IF = 13
   ND_WHILE = 14
   ND_FOR = 15
+  ND_BLOCK = 16
 
 # コンストラクタを1つに統合　～self に情報を詰めているため、returnが要らない
 class Node:
@@ -38,6 +39,8 @@ class Node:
       self.cand, self.while_block = nodes
     elif kind == NodeKind.ND_FOR:
       self.expr1, self.expr2, self.expr3, self.for_block = nodes
+    elif kind == NodeKind.ND_BLOCK:
+      self.nodes = nodes
     else:
       self.lhs, self.rhs = nodes
 
@@ -49,6 +52,18 @@ def program(cur):
   return code
 
 def stmt(cur):  
+  #ブロックなら
+  cur, bln = cur.consume("{")
+  if bln:
+    code = []
+    cur, bln = cur.consume("}")
+    while not bln:
+      node, cur = stmt(cur)
+      code.append(node)
+      cur, bln = cur.consume("}")
+    node = parser.Node(parser.NodeKind.ND_BLOCK, code, None)
+    return [node, cur]
+
   #returnなら
   cur, bln = cur.consume_tokenKind(tokenizer.TokenKind.TK_RETURN)
   if bln:

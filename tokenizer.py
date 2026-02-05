@@ -90,7 +90,8 @@ def tokenize():
           else:
             # 現時点で'!', '='に対応する文法が存在しないため棄却しておく
             utils.error_at("不明なトークンです", i)
-    elif user_input[i] in "+-*/();":
+    elif user_input[i] in "+-*/();{}":
+      # 予約語
       cur = Token(TokenKind.TK_RESERVED, cur, i)
       #code[i]は＋かーかを見る文だからi+1じゃない
       i += 1

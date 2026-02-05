@@ -90,6 +90,11 @@ def gen(node):
       print(f".Lend{label_now}:")
       print(" push rax")
       return
+    case parser.NodeKind.ND_BLOCK:
+      for n in node.nodes:
+        gen(n)
+      print(" push rax")
+      return
   
   # 右辺と左辺が計算済みなら計算できる
   gen(node.lhs)
