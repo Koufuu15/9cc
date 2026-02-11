@@ -21,6 +21,7 @@ class NodeKind(Enum):
   ND_WHILE = 14
   ND_FOR = 15
   ND_BLOCK = 16
+  ND_FUNCTION = 17
 
 # コンストラクタを1つに統合　～self に情報を詰めているため、returnが要らない
 class Node:
@@ -41,6 +42,9 @@ class Node:
       self.expr1, self.expr2, self.expr3, self.for_block = nodes
     elif kind == NodeKind.ND_BLOCK:
       self.nodes = nodes
+    elif kind == NodeKind.ND_FUNCTION:
+      self.func_name = nodes[0]
+      self.args = nodes[1]
     else:
       self.lhs, self.rhs = nodes
 
@@ -244,11 +248,17 @@ def primary(cur):
     cur = cur.expect(')')
     return [node, cur]
   
+  # 変数なら
   cur, bln, varname = cur.consume_ident()
   if bln:
-    if varname not in lvar:
-      lvar[varname] = (len(lvar) + 1) * 8
-    node = parser.Node(parser.NodeKind.ND_LVAR, [varname, None], lvar[varname])
+    cur, bln = cur.consume('(')
+    if bln:
+      cur = cur.expect(')')
+      node = parser.Node(parser.NodeKind.ND_FUNCTION, [varname, None], None)
+    else:
+      if varname not in lvar:
+        lvar[varname] = (len(lvar) + 1) * 8
+      node = parser.Node(parser.NodeKind.ND_LVAR, [varname, None], lvar[varname])
     return [node, cur]
 
   cur, val = cur.expect_number()

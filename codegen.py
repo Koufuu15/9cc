@@ -95,6 +95,16 @@ def gen(node):
         gen(n)
       print(" push rax")
       return
+    case parser.NodeKind.ND_FUNCTION:
+      cnt = len(parser.lvar) + utils.pop_cnt - utils.push_cnt
+      if cnt % 2 == 1:
+        print("sub 8, rsp")
+
+      print(f" call {node.func_name}")
+
+      if cnt % 2 == 1:
+        print("add 8, rsp")
+      return
   
   # 右辺と左辺が計算済みなら計算できる
   gen(node.lhs)

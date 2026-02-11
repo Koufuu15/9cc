@@ -23,3 +23,13 @@ def keyword(index):
     index += 1
   
   return val
+
+pop_cnt = 0
+def pop(rgs_name):
+  pop_cnt += 1
+  print(f" pop {rgs_name}")
+
+push_cnt = 0
+def push(rgs_name):
+  push_cnt += 1
+  print(f" push {rgs_name}")
