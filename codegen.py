@@ -2,6 +2,7 @@ import parser
 import utils
 
 label_count = 0
+register = ["rdi", "rsi", "rdx", "rcx", "r8", "r9"]
 
 def gen_lval(node):
   assert node.kind == parser.NodeKind.ND_LVAR, "代入の左辺値が変数ではありません"
@@ -96,14 +97,22 @@ def gen(node):
       print(" push rax")
       return
     case parser.NodeKind.ND_FUNCTION:
+      if len(node.args) > 0:
+        for i in range(len(node.args)):
+          gen(node.args[i])
+        for i in range(len(node.args)-1, -1, -1):  
+          print(f" pop {register[i]}")
+
       cnt = len(parser.lvar) + utils.pop_cnt - utils.push_cnt
       if cnt % 2 == 1:
-        print("sub 8, rsp")
+        print(" sub rsp, 8")
 
       print(f" call {node.func_name}")
 
       if cnt % 2 == 1:
-        print("add 8, rsp")
+        print(" add rsp, 8")
+      
+      print(" push rax")
       return
   
   # 右辺と左辺が計算済みなら計算できる

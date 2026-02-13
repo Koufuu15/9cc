@@ -1,6 +1,7 @@
 from enum import Enum
 import parser
 import tokenizer
+import user_input
 
 lvar = {}
 
@@ -121,6 +122,7 @@ def stmt(cur):
   node, cur = expr(cur)
   cur = cur.expect(";")
   return [node, cur]
+
 
 def expr(cur):
   node, cur = assign(cur)
@@ -253,8 +255,19 @@ def primary(cur):
   if bln:
     cur, bln = cur.consume('(')
     if bln:
-      cur = cur.expect(')')
-      node = parser.Node(parser.NodeKind.ND_FUNCTION, [varname, None], None)
+      cur, bln = cur.consume(')')
+      args = []
+      if bln:
+        node = parser.Node(parser.NodeKind.ND_FUNCTION, [varname, args], None)
+      else:
+        while True:
+          node, cur = expr(cur)
+          args.append(node)
+          cur, bln = cur.consume(",")
+          if not bln:
+            break
+        cur = cur.expect(')')
+        node = parser.Node(parser.NodeKind.ND_FUNCTION, [varname, args], None)
     else:
       if varname not in lvar:
         lvar[varname] = (len(lvar) + 1) * 8
